@@ -1,0 +1,6 @@
+node_modules
+dist
+src/data/generated
+public/hanzi
+.DS_Store
+*.local

@@ -1,0 +1,30 @@
+{
+  "name": "canto",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "data": "node scripts/build-data.mjs",
+    "predev": "npm run data",
+    "dev": "vite",
+    "prebuild": "npm run data",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "hanzi-writer": "^3.7.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "hanzi-writer-data": "^2.0.1",
+    "opencc-js": "^1.4.2",
+    "pinyin-pro": "^3.29.5",
+    "to-jyutping": "^3.1.1",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21"
+  }
+}
