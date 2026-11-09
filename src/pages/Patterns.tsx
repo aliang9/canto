@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { patterns, tonePairs } from '../lib/data';
-import { speak } from '../lib/speech';
+import { setCurrent, speak } from '../lib/speech';
 import { update, useStore } from '../lib/store';
 import type { PatternRow, TonePair } from '../lib/types';
 
@@ -72,6 +72,7 @@ function ToneGame() {
   const [run, setRun] = useState(0);
   const rule = patterns.tones.find((r) => r.c === pair.ck);
   const usual = rule?.out[0];
+  useEffect(() => setCurrent({ m: pair.s, c: pair.t }), [pair]);
 
   const pick = useCallback(
     (tone: string) => {

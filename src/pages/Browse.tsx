@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Hanzi } from '../components/Hanzi';
 import { Speaker } from '../components/Speaker';
 import { decks } from '../lib/data';
+import { setCurrent } from '../lib/speech';
 import type { Scope } from '../lib/session';
 import { useStore, type State } from '../lib/store';
 import type { Deck, Item } from '../lib/types';
@@ -33,7 +34,7 @@ function Row({ item, deck, state }: { item: Item; deck: Deck; state: State }) {
     </div>
   );
   return (
-    <li className="br-row">
+    <li className="br-row" onMouseEnter={() => setCurrent(item)} onFocus={() => setCurrent(item)}>
       <span className={`dot dot-${st}`} title={STATUS_LABEL[st]} />
       <div className="br-forms">{deck.target === 'm' ? [mandarin, cantonese] : [cantonese, mandarin]}</div>
       <div className="br-en">
@@ -61,7 +62,8 @@ export function Browse({ onStart }: { onStart: (scope: Scope) => void }) {
       </div>
       <p className="muted">{deck.blurb}</p>
       <p className="muted small">
-        <span className="rd-m">Red</span> is Mandarin pinyin. <span className="rd-c">Green</span> is Cantonese jyutping.
+        <span className="rd-m">Red</span> is Mandarin pinyin. <span className="rd-c">Green</span> is Cantonese jyutping. Point
+        at a row and press <kbd>M</kbd> or <kbd>C</kbd> to hear it.
       </p>
 
       {deck.units.map((unit) => (

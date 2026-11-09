@@ -1,6 +1,7 @@
 import { Hanzi } from '../components/Hanzi';
 import { Speaker } from '../components/Speaker';
 import { decks } from '../lib/data';
+import { setCurrent } from '../lib/speech';
 import type { Scope } from '../lib/session';
 import { update, useStore } from '../lib/store';
 import type { Item } from '../lib/types';
@@ -17,7 +18,11 @@ function Question({ item }: { item: Item }) {
     });
 
   return (
-    <li className={`card question ${entry?.asked ? 'asked' : ''}`}>
+    <li
+      className={`card question ${entry?.asked ? 'asked' : ''}`}
+      onMouseEnter={() => setCurrent(item)}
+      onFocus={() => setCurrent(item)}
+    >
       <p className="question-en">{item.en}</p>
       <div className="iv-line">
         <Hanzi text={item.c[settings.script]} top={item.c.jp} topLang="c" size="md" />

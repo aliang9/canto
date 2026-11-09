@@ -221,6 +221,16 @@ input[type='number'] {
   font-size: 1.3rem;
 }
 
+.link {
+  font: inherit;
+  color: var(--m);
+  background: none;
+  border: 0;
+  padding: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .pill {
   font-size: 0.78rem;
   font-weight: 600;
@@ -579,6 +589,10 @@ input[type='number'] {
   align-items: center;
   padding: 10px 0;
   border-top: 1px solid var(--line);
+}
+/* The row under the pointer is the one M and C will play. */
+.br-row:hover {
+  background: var(--bg);
 }
 .br-forms {
   display: flex;

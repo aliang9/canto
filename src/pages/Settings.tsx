@@ -1,28 +1,38 @@
 import { useRef, useState } from 'react';
-import { speak, useVoices } from '../lib/speech';
+import { isSilent, isTaiwan, recheckVoices, speak, useVoices } from '../lib/speech';
 import { exportState, importState, resetState, setSettings, useStore } from '../lib/store';
 import type { Lang } from '../lib/types';
 
 const SAMPLE: Record<Lang, string> = { m: '你好，很高兴认识你', c: '你好，好高興識到你' };
 
+function voiceLabel(v: SpeechSynthesisVoice): string {
+  const tags = [
+    isSilent(v) && 'no sound in this browser',
+    isTaiwan(v) && 'Taiwan accent',
+    !v.localService && 'needs internet',
+  ].filter(Boolean);
+  return tags.length ? `${v.name} (${tags.join(', ')})` : v.name;
+}
+
 function VoicePicker({ lang, label }: { lang: Lang; label: string }) {
   const { settings } = useStore();
-  const voices = useVoices()[lang];
+  const { all, active } = useVoices()[lang];
   const key = lang === 'm' ? 'voiceM' : 'voiceC';
+  const skipped = all.filter(isSilent);
   return (
-    <label className="field">
-      <span>{label}</span>
-      {voices.length === 0 ? (
+    <div className="field">
+      <label htmlFor={`voice-${lang}`}>{label}</label>
+      {all.length === 0 ? (
         <span className="muted small">
           No {label.toLowerCase()} found. On a Mac, add one under System Settings → Accessibility → Spoken Content.
         </span>
       ) : (
         <span className="row">
-          <select value={settings[key]} onChange={(e) => setSettings({ [key]: e.target.value })}>
-            <option value="">Automatic</option>
-            {voices.map((v) => (
+          <select id={`voice-${lang}`} value={settings[key]} onChange={(e) => setSettings({ [key]: e.target.value })}>
+            <option value="">Automatic{active ? `: ${active.name}` : ''}</option>
+            {all.map((v) => (
               <option key={v.voiceURI} value={v.voiceURI}>
-                {v.name} {v.localService ? '' : '(online)'}
+                {voiceLabel(v)}
               </option>
             ))}
           </select>
@@ -31,7 +41,21 @@ function VoicePicker({ lang, label }: { lang: Lang; label: string }) {
           </button>
         </span>
       )}
-    </label>
+      {active && (
+        <span className="muted small">
+          Now using {active.name}
+          {active.localService ? '' : ', which needs an internet connection'}.
+        </span>
+      )}
+      {skipped.length > 0 && (
+        <span className="muted small">
+          Skipping {skipped.map((v) => v.name).join(', ')}: installed, but produced no sound in this browser.{' '}
+          <button className="link" onClick={recheckVoices}>
+            Check again
+          </button>
+        </span>
+      )}
+    </div>
   );
 }
 

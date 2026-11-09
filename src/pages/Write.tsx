@@ -2,6 +2,7 @@ import HanziWriter, { type CharDataLoaderFn } from 'hanzi-writer';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Speaker } from '../components/Speaker';
 import { decks, isHan, strokeChars } from '../lib/data';
+import { setCurrent } from '../lib/speech';
 import { update, useStore } from '../lib/store';
 import type { Item } from '../lib/types';
 
@@ -127,6 +128,8 @@ export function Write() {
 
   const [char, setChar] = useState<string | null>(null);
   const current = entries.find(([ch]) => ch === char) ?? entries[0];
+  const currentItem = current?.[1];
+  useEffect(() => setCurrent(currentItem ?? null), [currentItem]);
 
   return (
     <div className="page">

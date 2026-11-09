@@ -11,7 +11,9 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:5173. It needs Node 18 or newer. Audio uses the speech voices built into your computer (on a Mac, Tingting for Mandarin and Sinji for Cantonese), so there are no accounts, keys, or costs.
+Then open http://localhost:5173. It needs Node 18 or newer. Audio uses the speech voices your browser offers, so there are no accounts, keys, or costs. Press `M` to hear the current item in Mandarin and `C` in Cantonese, on any page.
+
+The app picks the best voice that actually works. Some installed voices report that they are speaking but make no sound (Tingting does this in Chrome on some Macs); the app times every clip, skips a voice that is silent, and falls back to the next one, which may be Chrome's online Google voice. Settings → Audio shows which voice is in use and lets you choose another. For a good offline Mandarin voice on a Mac, download one under System Settings → Accessibility → Spoken Content → System Voice → Manage Voices.
 
 Your progress and journal are saved in the browser you study in. They are never written into this repository or sent anywhere. Use Settings → Download backup to move them to another browser or device.
 

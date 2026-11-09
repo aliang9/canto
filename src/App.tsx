@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Scope } from './lib/session';
+import { useAudioKeys } from './lib/speech';
 import { Browse } from './pages/Browse';
 import { Patterns } from './pages/Patterns';
 import { Roots } from './pages/Roots';
@@ -21,6 +22,7 @@ type Tab = (typeof TABS)[number]['id'];
 export function App() {
   const [tab, setTab] = useState<Tab>('today');
   const [session, setSession] = useState<Scope | null>(null);
+  useAudioKeys();
 
   if (session) return <Session scope={session} onExit={() => setSession(null)} />;
 

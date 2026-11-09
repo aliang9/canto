@@ -3,7 +3,7 @@ import { Hanzi } from '../components/Hanzi';
 import { ItemView } from '../components/ItemView';
 import { Speaker } from '../components/Speaker';
 import { buildSession, counts, type Card, type Scope } from '../lib/session';
-import { speakItem } from '../lib/speech';
+import { setCurrent, speakItem } from '../lib/speech';
 import { dayKey, previewLabel, schedule, type Grade } from '../lib/srs';
 import { getState, update, useStore } from '../lib/store';
 
@@ -68,6 +68,7 @@ export function Session({ scope, onExit }: { scope: Scope; onExit: () => void })
 
   // Play the Cantonese cue on the prompt, and the answer when it is revealed.
   useEffect(() => {
+    setCurrent(card?.item ?? null);
     if (!card || !settings.autoplay) return;
     if (revealed) speakItem(card.item, card.deck.target);
     else if (card.mode === 'say' && card.deck.target === 'm') speakItem(card.item, 'c');
@@ -107,8 +108,6 @@ export function Session({ scope, onExit }: { scope: Scope; onExit: () => void })
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === 'Escape') return onExit();
       if (!card) return;
-      if (e.key === 'm') return speakItem(card.item, 'm');
-      if (e.key === 'c') return speakItem(card.item, 'c');
       if (!revealed && (e.key === ' ' || e.key === 'Enter')) {
         e.preventDefault();
         return setRevealed(true);
