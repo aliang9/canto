@@ -1,16 +1,14 @@
 import { useRef, useState } from 'react';
-import { isSilent, isTaiwan, recheckVoices, speak, useVoices } from '../lib/speech';
+import { recheckVoices, speak, useVoices, type VoiceInfo } from '../lib/speech';
 import { exportState, importState, resetState, setSettings, useStore } from '../lib/store';
 import type { Lang } from '../lib/types';
 
 const SAMPLE: Record<Lang, string> = { m: '你好，很高兴认识你', c: '你好，好高興識到你' };
 
-function voiceLabel(v: SpeechSynthesisVoice): string {
-  const tags = [
-    isSilent(v) && 'no sound in this browser',
-    isTaiwan(v) && 'Taiwan accent',
-    !v.localService && 'needs internet',
-  ].filter(Boolean);
+function voiceLabel(v: VoiceInfo): string {
+  const tags = [v.silent && 'no sound in this browser', v.taiwan && 'Taiwan accent', v.online && 'needs internet'].filter(
+    Boolean,
+  );
   return tags.length ? `${v.name} (${tags.join(', ')})` : v.name;
 }
 
@@ -18,7 +16,7 @@ function VoicePicker({ lang, label }: { lang: Lang; label: string }) {
   const { settings } = useStore();
   const { all, active } = useVoices()[lang];
   const key = lang === 'm' ? 'voiceM' : 'voiceC';
-  const skipped = all.filter(isSilent);
+  const skipped = all.filter((v) => v.silent);
   return (
     <div className="field">
       <label htmlFor={`voice-${lang}`}>{label}</label>
@@ -31,7 +29,7 @@ function VoicePicker({ lang, label }: { lang: Lang; label: string }) {
           <select id={`voice-${lang}`} value={settings[key]} onChange={(e) => setSettings({ [key]: e.target.value })}>
             <option value="">Automatic{active ? `: ${active.name}` : ''}</option>
             {all.map((v) => (
-              <option key={v.voiceURI} value={v.voiceURI}>
+              <option key={v.id} value={v.id}>
                 {voiceLabel(v)}
               </option>
             ))}
@@ -44,7 +42,7 @@ function VoicePicker({ lang, label }: { lang: Lang; label: string }) {
       {active && (
         <span className="muted small">
           Now using {active.name}
-          {active.localService ? '' : ', which needs an internet connection'}.
+          {active.online ? ', which needs an internet connection' : ''}.
         </span>
       )}
       {skipped.length > 0 && (

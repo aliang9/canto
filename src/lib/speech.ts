@@ -11,7 +11,26 @@ import type { Item, Lang } from './types';
 
 const supported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
-export const isTaiwan = (v: SpeechSynthesisVoice) => /^zh[-_]TW/i.test(v.lang);
+// In the desktop app, the shell speaks through the operating system directly
+// (see electron/main.cjs), which is more reliable than the browser's engine.
+interface NativeVoice {
+  name: string;
+  taiwan: boolean;
+}
+interface NativeBridge {
+  voices(): Promise<Record<Lang, NativeVoice[]>>;
+  speak(request: { text: string; lang: Lang; voice: string; rate: number }): Promise<boolean>;
+  stop(): Promise<void>;
+}
+declare global {
+  interface Window {
+    cantoNative?: NativeBridge;
+  }
+}
+const native = typeof window !== 'undefined' ? window.cantoNative : undefined;
+let nativeVoices: Record<Lang, NativeVoice[]> = { m: [], c: [] };
+
+const isTaiwan = (v: SpeechSynthesisVoice) => /^zh[-_]TW/i.test(v.lang);
 const matches: Record<Lang, (v: SpeechSynthesisVoice) => boolean> = {
   // Taiwan Mandarin voices are a last resort: natural, but a different accent.
   m: (v) => /^(zh[-_]CN|cmn)/i.test(v.lang) || isTaiwan(v),
@@ -50,6 +69,16 @@ try {
 }
 const voiceListeners = new Set<() => void>();
 
+native
+  ?.voices()
+  .then((found) => {
+    nativeVoices = found;
+    voiceListeners.forEach((l) => l());
+  })
+  .catch(() => {
+    // No system voices: fall back to the browser's speech engine.
+  });
+
 function saveSilent() {
   try {
     localStorage.setItem(SILENT_KEY, JSON.stringify(silent));
@@ -59,7 +88,7 @@ function saveSilent() {
   voiceListeners.forEach((l) => l());
 }
 
-export const isSilent = (v: SpeechSynthesisVoice) => (silent[v.voiceURI] ?? 0) > Date.now();
+const isSilent = (v: SpeechSynthesisVoice) => (silent[v.voiceURI] ?? 0) > Date.now();
 
 function markSilent(v: SpeechSynthesisVoice) {
   // An online voice may just be offline for now, so it is retried sooner.
@@ -104,7 +133,7 @@ let watchdog: number | undefined;
 let request: { text: string; lang: Lang } | null = null;
 
 export function speak(text: string, lang: Lang) {
-  if (!supported || !text) return;
+  if ((!supported && !native) || !text) return;
   // Several requests in one tick (a key press landing with an autoplay, or
   // React re-running an effect) collapse into the last one, so the engine is
   // never asked to cancel a clip it has not started yet.
@@ -114,7 +143,14 @@ export function speak(text: string, lang: Lang) {
   queueMicrotask(() => {
     const next = request;
     request = null;
-    if (next) speakNow(next.text, next.lang, false);
+    if (!next) return;
+    const system = nativeVoices[next.lang];
+    if (native && system.length > 0) {
+      const { settings } = getState();
+      const wanted = next.lang === 'm' ? settings.voiceM : settings.voiceC;
+      const voice = system.find((v) => v.name === wanted) ?? system[0];
+      void native.speak({ text: next.text, lang: next.lang, voice: voice.name, rate: settings.rate });
+    } else speakNow(next.text, next.lang, false);
   });
 }
 
@@ -205,21 +241,59 @@ export function useAudioKeys() {
   }, []);
 }
 
+/** A voice as the Settings page shows it, whichever engine provides it. */
+export interface VoiceInfo {
+  id: string;
+  name: string;
+  /** Installed, but produced no sound when tried. */
+  silent: boolean;
+  taiwan: boolean;
+  /** Needs an internet connection. */
+  online: boolean;
+}
+
+export interface VoiceChoice {
+  all: VoiceInfo[];
+  active?: VoiceInfo;
+}
+
+function voiceChoice(lang: Lang): VoiceChoice {
+  const { settings } = getState();
+  const wanted = lang === 'm' ? settings.voiceM : settings.voiceC;
+  const system = nativeVoices[lang];
+  if (native && system.length > 0) {
+    const all = system.map((v) => ({
+      id: v.name,
+      // "Tingting (Chinese (China mainland))" -> "Tingting"
+      name: v.name.replace(/\s*\(Chinese.*$/, ''),
+      silent: false,
+      taiwan: v.taiwan,
+      online: false,
+    }));
+    return { all, active: all.find((v) => v.id === wanted) ?? all[0] };
+  }
+  const describe = (v: SpeechSynthesisVoice): VoiceInfo => ({
+    id: v.voiceURI,
+    name: v.name,
+    silent: isSilent(v),
+    taiwan: isTaiwan(v),
+    online: !v.localService,
+  });
+  const active = activeVoice(lang);
+  return { all: voicesFor(lang).map(describe), active: active && describe(active) };
+}
+
 /** Voice lists per language. Re-renders when voices load or one is found to be silent. */
-export function useVoices(): Record<Lang, { all: SpeechSynthesisVoice[]; active?: SpeechSynthesisVoice }> {
+export function useVoices(): Record<Lang, VoiceChoice> {
   const [, setTick] = useState(0);
   useEffect(() => {
-    if (!supported) return;
     const onChange = () => setTick((t) => t + 1);
-    window.speechSynthesis.addEventListener('voiceschanged', onChange);
     voiceListeners.add(onChange);
+    if (supported) window.speechSynthesis.addEventListener('voiceschanged', onChange);
     return () => {
-      window.speechSynthesis.removeEventListener('voiceschanged', onChange);
       voiceListeners.delete(onChange);
+      if (supported) window.speechSynthesis.removeEventListener('voiceschanged', onChange);
     };
   }, []);
-  return {
-    m: { all: voicesFor('m'), active: activeVoice('m') },
-    c: { all: voicesFor('c'), active: activeVoice('c') },
-  };
+  return { m: voiceChoice('m'), c: voiceChoice('c') };
 }

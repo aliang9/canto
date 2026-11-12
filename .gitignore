@@ -1,5 +1,6 @@
 node_modules
 dist
+release
 src/data/generated
 public/hanzi
 .DS_Store

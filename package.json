@@ -9,22 +9,45 @@
     "dev": "vite",
     "prebuild": "npm run data",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "hanzi-writer": "^3.7.3",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "preview": "vite preview",
+    "app": "npm run build && electron .",
+    "app:build": "npm run build && electron-builder --mac dir"
   },
   "devDependencies": {
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.7.0",
+    "electron": "^38.8.6",
+    "electron-builder": "^26.18.0",
+    "hanzi-writer": "^3.7.3",
     "hanzi-writer-data": "^2.0.1",
     "opencc-js": "^1.4.2",
     "pinyin-pro": "^3.29.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "to-jyutping": "^3.1.1",
     "typescript": "^5.9.3",
     "vite": "^5.4.21"
+  },
+  "description": "Learn Mandarin and Chinese characters from the Cantonese you already speak.",
+  "author": "Canto to Mando",
+  "main": "electron/main.cjs",
+  "build": {
+    "appId": "app.cantomando.desktop",
+    "productName": "Canto",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "electron/**",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.education",
+      "icon": "build/icon.png",
+      "identity": "-",
+      "hardenedRuntime": false
+    }
   }
 }
